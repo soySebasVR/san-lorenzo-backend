@@ -1,56 +1,177 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
 Description: >
-  Sample SAM Template for san-lorenzo-backend
+  san-lorenzo-backend — API del módulo docente.
+  ASP.NET Core sobre AWS Lambda, con SQL Server en RDS y credenciales en Secrets Manager.
 
-# More info about Globals: https://github.com/awslabs/serverless-application-model/blob/master/docs/globals.rst
+Parameters:
+  DbSecretName:
+    Type: String
+    Description: Nombre (o ARN) del secreto de Secrets Manager con usuario y contraseña de la BD.
+    Default: san-lorenzo/db/credentials
+
+  JwtSecretName:
+    Type: String
+    Description: >
+      Secreto de Secrets Manager con la clave de firma de los JWT (texto plano, mínimo
+      32 bytes para HS256). Generar con: openssl rand -base64 48
+    Default: san-lorenzo/jwt/signing-key
+
+  DbHost:
+    Type: String
+    Description: >
+      Endpoint del RDS SQL Server. Puede omitirse si el secreto ya trae el campo "host"
+      (los secretos gestionados por RDS lo incluyen).
+    Default: ''
+
+  DbName:
+    Type: String
+    Description: Nombre de la base de datos. Puede omitirse si el secreto trae el campo "dbname".
+    Default: ''
+
+  AllowedOrigins:
+    Type: CommaDelimitedList
+    Description: Orígenes permitidos por CORS (el frontend Angular).
+    Default: http://localhost:4200
+
+  VpcSubnetIds:
+    Type: CommaDelimitedList
+    Description: >
+      Subredes PRIVADAS donde correr el Lambda para alcanzar el RDS por red privada.
+      Déjalo vacío mientras el RDS sea público; al rellenarlo, el Lambda entra en la VPC
+      automáticamente (ver la condición UseVpc).
+    Default: ''
+
+  VpcSecurityGroupIds:
+    Type: CommaDelimitedList
+    Description: >
+      Security groups del Lambda. El SG del RDS debe permitir entrada en el puerto 1433
+      desde este SG.
+    Default: ''
+
+  LogLevel:
+    Type: String
+    Description: Nivel de log de Powertools.
+    Default: Information
+    AllowedValues: [Debug, Information, Warning, Error]
+
+  Architecture:
+    Type: String
+    Description: >
+      arm64 (Graviton) es más barato y es el valor por defecto. Se deja parametrizado por si
+      SnapStart diera problemas en arm64 para el runtime .NET: cambiar a x86_64 y redesplegar.
+    Default: arm64
+    AllowedValues: [arm64, x86_64]
+
+  EnableSnapStart:
+    Type: String
+    Description: >
+      SnapStart congela el entorno ya inicializado y lo restaura desde un snapshot, lo que
+      recorta drásticamente el arranque en frío de ASP.NET. Solo funciona sobre versiones
+      publicadas, nunca sobre $LATEST, por eso la función usa AutoPublishAlias.
+      Tiene coste: se paga el cacheo del snapshot (mínimo 3 h) y cada restauración.
+    Default: 'true'
+    AllowedValues: ['true', 'false']
+
+Conditions:
+  # Con VpcSubnetIds vacío el Lambda corre fuera de la VPC (RDS público).
+  # En cuanto se rellena el parámetro se añaden VpcConfig y los permisos de ENI,
+  # sin tocar una línea de código ni de esta plantilla.
+  UseVpc: !Not [!Equals [!Join ['', !Ref VpcSubnetIds], '']]
+
+  UseSnapStart: !Equals [!Ref EnableSnapStart, 'true']
+
 Globals:
   Function:
-    Timeout: 100
+    Runtime: dotnet10
+    MemorySize: 1024
+    # API Gateway corta a los 29 s: un timeout mayor solo alarga la factura de un fallo.
+    Timeout: 29
+    Architectures: [!Ref Architecture]
+    Tracing: Active
+    Environment:
+      Variables:
+        POWERTOOLS_SERVICE_NAME: san-lorenzo-docente
+        POWERTOOLS_LOG_LEVEL: !Ref LogLevel
+        POWERTOOLS_LOGGER_LOG_EVENT: 'false'
+        POWERTOOLS_TRACE_DISABLED: 'false'
+        # Sin esto, el SDK de X-Ray lanza si una traza arranca fuera de un segmento.
+        AWS_XRAY_CONTEXT_MISSING: IGNORE_ERROR
 
 Resources:
-  NetCodeWebAPIServerless:
-    Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
+  DocenteApi:
+    Type: AWS::Serverless::HttpApi
     Properties:
-      Description: A simple example includes a .NET Core WebAPI App with DynamoDB table.
+      StageName: prod
+      CorsConfiguration:
+        AllowOrigins: !Ref AllowedOrigins
+        AllowHeaders: [Content-Type, Authorization]
+        AllowMethods: [GET, POST, PUT, DELETE, OPTIONS]
+
+  DocenteFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: san-lorenzo-docente-api
+      Description: API del módulo docente (inicio, cursos, notas, asistencia, horarios, comunicaciones, perfil).
       CodeUri: ./src/ServerlessAPI/
+      # Con AddAWSLambdaHosting el handler es el propio ensamblado ejecutable.
       Handler: ServerlessAPI
-      Runtime: dotnet10
-      MemorySize: 1024
-      Environment: # More info about Env Vars: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#environment-object
+
+      # SnapStart solo actúa sobre versiones publicadas, nunca sobre $LATEST. AutoPublishAlias
+      # hace que cada despliegue publique una versión nueva y mueva el alias "live" a ella;
+      # API Gateway apunta al alias, así que siempre invoca una versión con snapshot.
+      AutoPublishAlias: live
+      SnapStart: !If
+        - UseSnapStart
+        - ApplyOn: PublishedVersions
+        - ApplyOn: None
+
+      Environment:
         Variables:
-          SAMPLE_TABLE: !Ref SampleTable
+          DB_SECRET_NAME: !Ref DbSecretName
+          DB_HOST: !Ref DbHost
+          DB_NAME: !Ref DbName
+          JWT_SECRET_NAME: !Ref JwtSecretName
+          Cors__AllowedOrigins__0: !Select [0, !Ref AllowedOrigins]
       Policies:
-        # Give Create/Read/Update/Delete Permissions to the SampleTable
-        - DynamoDBCrudPolicy:
-            TableName: !Ref SampleTable
+        # Permiso mínimo: leer únicamente estos dos secretos, ninguno más.
+        - AWSSecretsManagerGetSecretValuePolicy:
+            SecretArn: !Sub 'arn:${AWS::Partition}:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:${DbSecretName}*'
+        - AWSSecretsManagerGetSecretValuePolicy:
+            SecretArn: !Sub 'arn:${AWS::Partition}:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:${JwtSecretName}*'
+        # Crear y borrar las ENI que el Lambda necesita para vivir dentro de la VPC.
+        - !If
+          - UseVpc
+          - VPCAccessPolicy: {}
+          - !Ref AWS::NoValue
+      VpcConfig: !If
+        - UseVpc
+        - SubnetIds: !Ref VpcSubnetIds
+          SecurityGroupIds: !Ref VpcSecurityGroupIds
+        - !Ref AWS::NoValue
       Events:
         ProxyResource:
           Type: HttpApi
           Properties:
-            PayloadFormatVersion: "2.0"
+            ApiId: !Ref DocenteApi
             Path: /{proxy+}
             Method: ANY
         RootResource:
-          PayloadFormatVersion: "2.0"
           Type: HttpApi
           Properties:
+            ApiId: !Ref DocenteApi
             Path: /
             Method: ANY
 
-  # DynamoDB table to store item: {id: &lt;ID&gt;, name: &lt;NAME&gt;}
-  SampleTable:
-    Type: AWS::Serverless::SimpleTable
-    Properties:
-      TableName: san-lorenzo-backendBookCatalog
-      PrimaryKey:
-        Name: Id
-        Type: String
-      ProvisionedThroughput:
-        ReadCapacityUnits: 2
-        WriteCapacityUnits: 2
-
 Outputs:
-  WebEndpoint:
-    Description: "API Gateway endpoint URL"
-    Value: !Sub "https://${ServerlessHttpApi}.execute-api.${AWS::Region}.${AWS::URLSuffix}/"
+  ApiEndpoint:
+    Description: URL base de la API del módulo docente.
+    Value: !Sub 'https://${DocenteApi}.execute-api.${AWS::Region}.${AWS::URLSuffix}/prod'
+
+  FunctionArn:
+    Description: ARN del Lambda.
+    Value: !GetAtt DocenteFunction.Arn
+
+  RunningInVpc:
+    Description: Indica si el Lambda está desplegado dentro de la VPC.
+    Value: !If [UseVpc, 'si', 'no (RDS publico)']

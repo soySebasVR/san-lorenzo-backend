@@ -2,24 +2,31 @@
 
     <PropertyGroup>
         <TargetFramework>net10.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
 
         <IsPackable>false</IsPackable>
+        <!-- xunit.v3 corre sobre Microsoft.Testing.Platform, no sobre VSTest.
+             TestingPlatformDotnetTestSupport es lo que hace que `dotnet test` siga funcionando. -->
+        <OutputType>Exe</OutputType>
+        <UseMicrosoftTestingPlatformRunner>true</UseMicrosoftTestingPlatformRunner>
+        <TestingPlatformDotnetTestSupport>true</TestingPlatformDotnetTestSupport>
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="Bogus" Version="35.6.5" />
         <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" Version="10.0.9" />
-        <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.7.0" />
-        <PackageReference Include="xunit" Version="2.9.3" />
-        <PackageReference Include="xunit.runner.visualstudio" Version="3.1.5">
-            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-            <PrivateAssets>all</PrivateAssets>
-        </PackageReference>
-        <PackageReference Include="coverlet.collector" Version="10.0.1">
-            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-            <PrivateAssets>all</PrivateAssets>
-        </PackageReference>
+        <!-- SQLite en memoria: permite ejercitar EF Core de verdad (LINQ, upserts,
+             índices únicos) sin levantar un SQL Server. -->
+        <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.9" />
+        <!-- EF Core 10 arrastra SQLitePCLRaw 2.1.11, con vulnerabilidad conocida y sin parche
+             en la rama 2.x (GHSA-2m69-gcr7-jv3q). Se ancla a la rama 3.x, que ya la corrige.
+             Solo afecta a los tests: este paquete nunca viaja al Lambda. -->
+        <PackageReference Include="SQLitePCLRaw.bundle_e_sqlite3" Version="3.0.3" />
+        <!-- xunit 2.x está marcado como deprecado (Legacy) en NuGet; el sucesor es xunit.v3. -->
+        <PackageReference Include="xunit.v3" Version="3.2.2" />
+        <!-- coverlet.collector era del runner de VSTest y Microsoft.Testing.Platform lo ignora
+             (avisaba con MTP0001). Esta es la extensión de cobertura equivalente. -->
+        <PackageReference Include="Microsoft.Testing.Extensions.CodeCoverage" Version="18.0.4" />
     </ItemGroup>
 
     <ItemGroup>

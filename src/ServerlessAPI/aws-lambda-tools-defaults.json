@@ -9,6 +9,7 @@
   "region": "",
   "configuration": "Release",
   "s3-prefix": "san-lorenzo-backend/",
-  "template": "serverless.template",
-  "template-parameters": ""
+  "template": "../../template.yaml",
+  "template-parameters": "",
+  "msbuild-parameters": "--self-contained false"
 }

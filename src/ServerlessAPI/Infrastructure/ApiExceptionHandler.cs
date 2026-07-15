@@ -1,0 +1,42 @@
+using Microsoft.AspNetCore.Diagnostics;
+using Microsoft.AspNetCore.Mvc;
+
+namespace ServerlessAPI.Infrastructure;
+
+/// <summary>
+/// Maps domain errors to ProblemDetails. Anything that is not an ApiException falls through
+/// to the default pipeline and surfaces as a 500, so internals never reach the client.
+/// </summary>
+public sealed class ApiExceptionHandler(ILogger<ApiExceptionHandler> logger) : IExceptionHandler
+{
+    public async ValueTask<bool> TryHandleAsync(
+        HttpContext httpContext,
+        Exception exception,
+        CancellationToken cancellationToken)
+    {
+        if (exception is not ApiException apiException)
+        {
+            logger.LogError(exception, "Unhandled error at {Path}", httpContext.Request.Path);
+            return false;
+        }
+
+        logger.LogWarning(
+            "Request rejected with {StatusCode} at {Path}: {Reason}",
+            apiException.StatusCode, httpContext.Request.Path, apiException.Message);
+
+        var problem = new ProblemDetails
+        {
+            Status = apiException.StatusCode,
+            Title = apiException.Title,
+            Detail = apiException.Message,
+            Instance = httpContext.Request.Path,
+        };
+
+        httpContext.Response.StatusCode = apiException.StatusCode;
+        await httpContext.Response
+            .WriteAsJsonAsync(problem, cancellationToken)
+            .ConfigureAwait(false);
+
+        return true;
+    }
+}
