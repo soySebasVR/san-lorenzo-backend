@@ -133,17 +133,7 @@ Resources:
           DB_NAME: !Ref DbName
           JWT_SECRET_NAME: !Ref JwtSecretName
           Cors__AllowedOrigins__0: !Select [0, !Ref AllowedOrigins]
-      Policies:
-        # Permiso mínimo: leer únicamente estos dos secretos, ninguno más.
-        - AWSSecretsManagerGetSecretValuePolicy:
-            SecretArn: !Sub 'arn:${AWS::Partition}:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:${DbSecretName}*'
-        - AWSSecretsManagerGetSecretValuePolicy:
-            SecretArn: !Sub 'arn:${AWS::Partition}:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:${JwtSecretName}*'
-        # Crear y borrar las ENI que el Lambda necesita para vivir dentro de la VPC.
-        - !If
-          - UseVpc
-          - VPCAccessPolicy: {}
-          - !Ref AWS::NoValue
+      Role: arn:aws:iam::928037113213:role/LabRole
       VpcConfig: !If
         - UseVpc
         - SubnetIds: !Ref VpcSubnetIds
