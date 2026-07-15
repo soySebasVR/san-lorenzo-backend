@@ -25,3 +25,9 @@ public sealed class NotFoundException(string message) : ApiException(message)
     public override int StatusCode => StatusCodes.Status404NotFound;
     public override string Title => "Not found";
 }
+
+public sealed class ConflictException(string message) : ApiException(message)
+{
+    public override int StatusCode => StatusCodes.Status409Conflict;
+    public override string Title => "Conflict";
+}

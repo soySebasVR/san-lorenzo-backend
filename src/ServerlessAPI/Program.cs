@@ -148,6 +148,13 @@ builder.Services.AddScoped<IAttendanceRepository, AttendanceRepository>();
 builder.Services.AddScoped<IScheduleRepository, ScheduleRepository>();
 builder.Services.AddScoped<IAnnouncementRepository, AnnouncementRepository>();
 builder.Services.AddScoped<IProfileRepository, ProfileRepository>();
+builder.Services.AddScoped<
+    IInstitutionalConfigurationRepository,
+    InstitutionalConfigurationRepository>();
+
+builder.Services.AddScoped<
+    ICoordinatorProfileRepository,
+    CoordinatorProfileRepository>();
 
 // ── CORS ─────────────────────────────────────────────────────────────────────
 const string corsPolicy = "san-lorenzo-frontend";
