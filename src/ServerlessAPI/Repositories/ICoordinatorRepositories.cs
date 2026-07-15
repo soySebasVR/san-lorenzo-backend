@@ -43,3 +43,21 @@ public interface ICoordinatorAnnouncementRepository
         UpdateCoordinatorAnnouncementRequest request,
         CancellationToken ct = default);
 }
+
+public interface ICoordinatorReportRepository
+{
+    Task<IReadOnlyList<CoordinatorReportSummaryResponse>> GetAsync(
+        int userId,
+        string? reportType,
+        CancellationToken ct = default);
+
+    Task<CoordinatorReportResponse?> GetByIdAsync(
+        int userId,
+        int reportId,
+        CancellationToken ct = default);
+
+    Task<CoordinatorReportResponse> GenerateAsync(
+        int userId,
+        GenerateCoordinatorReportRequest request,
+        CancellationToken ct = default);
+}
