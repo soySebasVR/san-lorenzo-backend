@@ -24,3 +24,22 @@ public interface ICoordinatorProfileRepository
         UpdateCoordinatorProfileRequest request,
         CancellationToken ct = default);
 }
+
+public interface ICoordinatorAnnouncementRepository
+{
+    Task<IReadOnlyList<CoordinatorAnnouncementResponse>> GetAsync(
+        int userId,
+        string? status,
+        CancellationToken ct = default);
+
+    Task<CoordinatorAnnouncementResponse> CreateAsync(
+        int userId,
+        CreateCoordinatorAnnouncementRequest request,
+        CancellationToken ct = default);
+
+    Task<CoordinatorAnnouncementResponse> UpdateAsync(
+        int userId,
+        int announcementId,
+        UpdateCoordinatorAnnouncementRequest request,
+        CancellationToken ct = default);
+}

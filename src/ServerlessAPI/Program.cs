@@ -156,6 +156,10 @@ builder.Services.AddScoped<
     ICoordinatorProfileRepository,
     CoordinatorProfileRepository>();
 
+builder.Services.AddScoped<
+    ICoordinatorAnnouncementRepository,
+    CoordinatorAnnouncementRepository>();
+
 // ── CORS ─────────────────────────────────────────────────────────────────────
 const string corsPolicy = "san-lorenzo-frontend";
 var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>()
