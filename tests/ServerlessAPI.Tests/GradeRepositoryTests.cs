@@ -27,8 +27,8 @@ public sealed class GradeRepositoryTests : SqliteTestBase
             new Course { Id = OtherCourseId, TeacherId = OtherTeacherId, Name = "Historia", GradeLevel = "3ro", Section = "B", Color = "#EF4444" });
 
         Db.Students.AddRange(
-            new Student { Id = StudentId, CourseId = CourseId, Name = "Carlos Ruiz" },
-            new Student { Id = OtherStudentId, CourseId = OtherCourseId, Name = "Marta Díaz" });
+            new Student { Id = StudentId, GradeLevel = "3ro", Section = "A", Name = "Carlos Ruiz" },
+            new Student { Id = OtherStudentId, GradeLevel = "3ro", Section = "B", Name = "Marta Díaz" });
 
         return Task.CompletedTask;
     }

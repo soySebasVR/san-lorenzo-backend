@@ -14,16 +14,24 @@ public sealed class GradeRepository(SanLorenzoDbContext db) : IGradeRepository
         int teacherId, string course, string gradeLevel, string section, string term,
         CancellationToken ct = default)
     {
+        // Resolve the course by name + section for this teacher; its students are those in
+        // the same grade + section.
+        var targetCourse = await db.Courses
+            .AsNoTracking()
+            .Where(c => c.TeacherId == teacherId
+                        && c.Name == course
+                        && c.GradeLevel == gradeLevel
+                        && c.Section == section)
+            .Select(c => c.Id)
+            .FirstOrDefaultAsync(ct)
+            .ConfigureAwait(false);
+
         // LEFT JOIN: students with no grades yet still show up, with zeros.
         var entries = await (
                 from s in db.Students.AsNoTracking()
-                join c in db.Courses.AsNoTracking() on s.CourseId equals c.Id
-                where c.TeacherId == teacherId
-                      && c.Name == course
-                      && c.GradeLevel == gradeLevel
-                      && c.Section == section
-                join g in db.Grades.AsNoTracking().Where(g => g.Term == term)
-                    on new { StudentId = s.Id, CourseId = c.Id } equals new { g.StudentId, g.CourseId }
+                where s.GradeLevel == gradeLevel && s.Section == section
+                join g in db.Grades.AsNoTracking().Where(g => g.Term == term && g.CourseId == targetCourse)
+                    on s.Id equals g.StudentId
                     into termGrades
                 from g in termGrades.DefaultIfEmpty()
                 orderby s.Name
@@ -46,19 +54,20 @@ public sealed class GradeRepository(SanLorenzoDbContext db) : IGradeRepository
     public async Task UpsertGradeAsync(
         int studentId, int teacherId, UpdateGradeRequest request, CancellationToken ct = default)
     {
-        // Both checks at once: the course belongs to this teacher AND the student belongs
-        // to that course. Checking only the former lets a teacher write grades for a
-        // student of another course by passing an arbitrary studentId.
-        var studentBelongsToCourse = await db.Students
-            .AsNoTracking()
-            .AnyAsync(
-                s => s.Id == studentId
-                     && s.CourseId == request.CourseId
-                     && s.Course.TeacherId == teacherId,
-                ct)
+        // The course must belong to this teacher AND the student must be in that course's
+        // section. Checking only the former lets a teacher write grades for a student of
+        // another section by passing an arbitrary studentId.
+        var allowed = await (
+                from c in db.Courses.AsNoTracking()
+                where c.Id == request.CourseId && c.TeacherId == teacherId
+                join s in db.Students.AsNoTracking()
+                    on new { c.GradeLevel, c.Section } equals new { s.GradeLevel, s.Section }
+                where s.Id == studentId
+                select c.Id)
+            .AnyAsync(ct)
             .ConfigureAwait(false);
 
-        if (!studentBelongsToCourse)
+        if (!allowed)
             throw new ForbiddenException("Student or course does not belong to this teacher.");
 
         var average = Math.Round(

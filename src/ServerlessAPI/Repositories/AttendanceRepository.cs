@@ -13,20 +13,20 @@ public sealed class AttendanceRepository(SanLorenzoDbContext db) : IAttendanceRe
     public async Task<AttendanceResponse> GetAttendanceAsync(
         int teacherId, int courseId, DateOnly date, CancellationToken ct = default)
     {
-        var courseName = await db.Courses
+        var course = await db.Courses
             .AsNoTracking()
             .Where(c => c.Id == courseId && c.TeacherId == teacherId)
-            .Select(c => c.Name)
+            .Select(c => new { c.Name, c.GradeLevel, c.Section })
             .FirstOrDefaultAsync(ct)
             .ConfigureAwait(false);
 
-        if (courseName is null)
+        if (course is null)
             throw new NotFoundException($"Course {courseId} does not exist or is not yours.");
 
         // No record for that date means present.
         var students = await (
                 from s in db.Students.AsNoTracking()
-                where s.CourseId == courseId
+                where s.GradeLevel == course.GradeLevel && s.Section == course.Section
                 join a in db.Attendance.AsNoTracking().Where(x => x.Date == date && x.CourseId == courseId)
                     on s.Id equals a.StudentId
                     into records
@@ -36,26 +36,33 @@ public sealed class AttendanceRepository(SanLorenzoDbContext db) : IAttendanceRe
             .ToListAsync(ct)
             .ConfigureAwait(false);
 
-        return new AttendanceResponse(courseId, courseName, date, students);
+        return new AttendanceResponse(courseId, course.Name, date, students);
     }
 
     [Tracing(SegmentName = "Save attendance")]
     public async Task SaveAttendanceAsync(
         int teacherId, SaveAttendanceRequest request, CancellationToken ct = default)
     {
-        var ownsCourse = await db.Courses
+        var course = await db.Courses
             .AsNoTracking()
-            .AnyAsync(c => c.Id == request.CourseId && c.TeacherId == teacherId, ct)
+            .Where(c => c.Id == request.CourseId && c.TeacherId == teacherId)
+            .Select(c => new { c.GradeLevel, c.Section })
+            .FirstOrDefaultAsync(ct)
             .ConfigureAwait(false);
 
-        if (!ownsCourse)
+        if (course is null)
             throw new ForbiddenException("Course does not belong to this teacher.");
 
         var studentIds = request.Entries.Select(e => e.StudentId).Distinct().ToList();
 
+        // Every student sent must be in this course's section.
         var validStudents = await db.Students
             .AsNoTracking()
-            .CountAsync(s => s.CourseId == request.CourseId && studentIds.Contains(s.Id), ct)
+            .CountAsync(
+                s => s.GradeLevel == course.GradeLevel
+                     && s.Section == course.Section
+                     && studentIds.Contains(s.Id),
+                ct)
             .ConfigureAwait(false);
 
         if (validStudents != studentIds.Count)

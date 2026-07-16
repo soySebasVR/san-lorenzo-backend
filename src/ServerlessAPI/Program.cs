@@ -121,12 +121,14 @@ builder.Services.AddDbContext<SanLorenzoDbContext>((sp, options) =>
     {
         // RDS drops connections on failover and maintenance; retrying keeps that from
         // surfacing as a 500.
+        // 258 / -2 are SQL Server timeout errors that hit the first connection from a cold
+        // Lambda container; adding them here makes EF retry instead of surfacing a 500.
         sql.EnableRetryOnFailure(
-            maxRetryCount: 3,
-            maxRetryDelay: TimeSpan.FromSeconds(5),
-            errorNumbersToAdd: null);
+            maxRetryCount: 5,
+            maxRetryDelay: TimeSpan.FromSeconds(6),
+            errorNumbersToAdd: [258, -2]);
 
-        sql.CommandTimeout(15);
+        sql.CommandTimeout(30);
     });
 
     if (builder.Environment.IsDevelopment())
@@ -148,21 +150,18 @@ builder.Services.AddScoped<IAttendanceRepository, AttendanceRepository>();
 builder.Services.AddScoped<IScheduleRepository, ScheduleRepository>();
 builder.Services.AddScoped<IAnnouncementRepository, AnnouncementRepository>();
 builder.Services.AddScoped<IProfileRepository, ProfileRepository>();
-builder.Services.AddScoped<
-    IInstitutionalConfigurationRepository,
-    InstitutionalConfigurationRepository>();
+builder.Services.AddScoped<IStudentRepository, StudentRepository>();
 
-builder.Services.AddScoped<
-    ICoordinatorProfileRepository,
-    CoordinatorProfileRepository>();
-
-builder.Services.AddScoped<
-    ICoordinatorAnnouncementRepository,
-    CoordinatorAnnouncementRepository>();
-
-builder.Services.AddScoped<
-    ICoordinatorReportRepository,
-    CoordinatorReportRepository>();
+builder.Services.AddScoped<ICoordinatorDashboardRepository, CoordinatorDashboardRepository>();
+builder.Services.AddScoped<IUserAdminRepository, UserAdminRepository>();
+builder.Services.AddScoped<ICourseAdminRepository, CourseAdminRepository>();
+builder.Services.AddScoped<IScheduleAdminRepository, ScheduleAdminRepository>();
+builder.Services.AddScoped<ISettingsRepository, SettingsRepository>();
+builder.Services.AddScoped<ICoordinatorProfileRepository, CoordinatorProfileRepository>();
+builder.Services.AddScoped<IAssignmentRepository, AssignmentRepository>();
+builder.Services.AddScoped<IReportRepository, ReportRepository>();
+builder.Services.AddScoped<IBroadcastRepository, BroadcastRepository>();
+builder.Services.AddScoped<IBehaviorRepository, BehaviorRepository>();
 
 // ── CORS ─────────────────────────────────────────────────────────────────────
 const string corsPolicy = "san-lorenzo-frontend";

@@ -24,23 +24,29 @@ public sealed class AnnouncementRepository(SanLorenzoDbContext db) : IAnnounceme
                 throw new ForbiddenException("Course does not belong to this teacher.");
         }
 
+        // Recipients are students in sections this teacher teaches.
         var recipients = db.Students
             .AsNoTracking()
-            .Where(s => s.Course.TeacherId == teacherId);
+            .Where(s => db.Courses.Any(c => c.TeacherId == teacherId
+                                            && c.GradeLevel == s.GradeLevel
+                                            && c.Section == s.Section));
 
+        // Targeting a course narrows to that course's section.
         if (request.CourseId is { } courseFilter)
-            recipients = recipients.Where(s => s.CourseId == courseFilter);
+        {
+            recipients = recipients.Where(
+                s => db.Courses.Any(c => c.Id == courseFilter
+                                         && c.GradeLevel == s.GradeLevel
+                                         && c.Section == s.Section));
+        }
 
         if (!string.IsNullOrWhiteSpace(request.GradeLevel))
-            recipients = recipients.Where(s => s.Course.GradeLevel == request.GradeLevel);
+            recipients = recipients.Where(s => s.GradeLevel == request.GradeLevel);
 
         if (!string.IsNullOrWhiteSpace(request.Section))
-            recipients = recipients.Where(s => s.Course.Section == request.Section);
+            recipients = recipients.Where(s => s.Section == request.Section);
 
-        // Distinct: a student could show up through more than one course of the same teacher.
         var recipientCount = await recipients
-            .Select(s => s.Id)
-            .Distinct()
             .CountAsync(ct)
             .ConfigureAwait(false);
 

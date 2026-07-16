@@ -86,8 +86,8 @@ public sealed class ConnectionStringProvider(IConfiguration configuration) : ISe
             MinPoolSize = 0,
             MaxPoolSize = 10,
 
-            ConnectTimeout = 10,
-            CommandTimeout = 15,
+            ConnectTimeout = 30,
+            CommandTimeout = 30,
             ApplicationName = "san-lorenzo-api",
         };
 

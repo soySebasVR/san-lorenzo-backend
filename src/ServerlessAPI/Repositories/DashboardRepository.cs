@@ -20,9 +20,14 @@ public sealed class DashboardRepository(SanLorenzoDbContext db) : IDashboardRepo
             .ToListAsync(ct)
             .ConfigureAwait(false);
 
+        // Students in any section this teacher teaches.
         var totalStudents = await db.Students
             .AsNoTracking()
-            .CountAsync(s => s.Course.TeacherId == teacherId, ct)
+            .CountAsync(
+                s => db.Courses.Any(c => c.TeacherId == teacherId
+                                         && c.GradeLevel == s.GradeLevel
+                                         && c.Section == s.Section),
+                ct)
             .ConfigureAwait(false);
 
         // Pending = courses with no attendance recorded today.

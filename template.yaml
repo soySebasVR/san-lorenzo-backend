@@ -60,7 +60,7 @@ Parameters:
     Description: >
       arm64 (Graviton) es más barato y es el valor por defecto. Se deja parametrizado por si
       SnapStart diera problemas en arm64 para el runtime .NET: cambiar a x86_64 y redesplegar.
-    Default: arm64
+    Default: x86_64
     AllowedValues: [arm64, x86_64]
 
   EnableSnapStart:
@@ -70,7 +70,7 @@ Parameters:
       recorta drásticamente el arranque en frío de ASP.NET. Solo funciona sobre versiones
       publicadas, nunca sobre $LATEST, por eso la función usa AutoPublishAlias.
       Tiene coste: se paga el cacheo del snapshot (mínimo 3 h) y cada restauración.
-    Default: 'true'
+    Default: 'false'
     AllowedValues: ['true', 'false']
 
 Conditions:
@@ -91,7 +91,7 @@ Globals:
     Tracing: Active
     Environment:
       Variables:
-        POWERTOOLS_SERVICE_NAME: san-lorenzo-docente
+        POWERTOOLS_SERVICE_NAME: san-lorenzo-backend
         POWERTOOLS_LOG_LEVEL: !Ref LogLevel
         POWERTOOLS_LOGGER_LOG_EVENT: 'false'
         POWERTOOLS_TRACE_DISABLED: 'false'
@@ -99,7 +99,7 @@ Globals:
         AWS_XRAY_CONTEXT_MISSING: IGNORE_ERROR
 
 Resources:
-  DocenteApi:
+  SanLorenzoApi:
     Type: AWS::Serverless::HttpApi
     Properties:
       StageName: prod
@@ -108,10 +108,10 @@ Resources:
         AllowHeaders: [Content-Type, Authorization]
         AllowMethods: [GET, POST, PUT, DELETE, OPTIONS]
 
-  DocenteFunction:
+  SanLorenzoFunction:
     Type: AWS::Serverless::Function
     Properties:
-      FunctionName: san-lorenzo-docente-api
+      FunctionName: san-lorenzo-backend-api
       Description: API del módulo docente (inicio, cursos, notas, asistencia, horarios, comunicaciones, perfil).
       CodeUri: ./src/ServerlessAPI/
       # Con AddAWSLambdaHosting el handler es el propio ensamblado ejecutable.
@@ -143,24 +143,24 @@ Resources:
         ProxyResource:
           Type: HttpApi
           Properties:
-            ApiId: !Ref DocenteApi
+            ApiId: !Ref SanLorenzoApi
             Path: /{proxy+}
             Method: ANY
         RootResource:
           Type: HttpApi
           Properties:
-            ApiId: !Ref DocenteApi
+            ApiId: !Ref SanLorenzoApi
             Path: /
             Method: ANY
 
 Outputs:
   ApiEndpoint:
     Description: URL base de la API del módulo docente.
-    Value: !Sub 'https://${DocenteApi}.execute-api.${AWS::Region}.${AWS::URLSuffix}/prod'
+    Value: !Sub 'https://${SanLorenzoApi}.execute-api.${AWS::Region}.${AWS::URLSuffix}/prod'
 
   FunctionArn:
     Description: ARN del Lambda.
-    Value: !GetAtt DocenteFunction.Arn
+    Value: !GetAtt SanLorenzoFunction.Arn
 
   RunningInVpc:
     Description: Indica si el Lambda está desplegado dentro de la VPC.

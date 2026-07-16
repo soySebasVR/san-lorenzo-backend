@@ -19,11 +19,10 @@
              (3,4 MB) que nadie lee: los mensajes de error del servidor se quedan en inglés. -->
         <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
 
-        <!-- Evita cargar ICU en el arranque. La app no compara ni ordena texto según cultura:
-             el ORDER BY lo hace SQL Server con su propia collation, y las fechas y horas viajan
-             en formato invariante (ISO / "HH:mm"). -->
-        <InvariantGlobalization>false</InvariantGlobalization>
+        <!-- No activar InvariantGlobalization: Microsoft.Data.SqlClient no lo soporta y lanza
+             "Globalization Invariant Mode is not supported" al abrir la conexión. -->
     </PropertyGroup>
+
     <ItemGroup>
         <PackageReference Include="Amazon.Lambda.AspNetCoreServer.Hosting" Version="2.1.0" />
         <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.9" />
