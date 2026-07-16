@@ -13,6 +13,11 @@ public class SanLorenzoDbContext(DbContextOptions<SanLorenzoDbContext> options) 
     public DbSet<Attendance> Attendance => Set<Attendance>();
     public DbSet<ScheduleSlot> ScheduleSlots => Set<ScheduleSlot>();
     public DbSet<Announcement> Announcements => Set<Announcement>();
+    public DbSet<SystemSettings> SystemSettings => Set<SystemSettings>();
+    public DbSet<Assignment> Assignments => Set<Assignment>();
+    public DbSet<Report> Reports => Set<Report>();
+    public DbSet<Broadcast> Broadcasts => Set<Broadcast>();
+    public DbSet<BehaviorReport> BehaviorReports => Set<BehaviorReport>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -76,11 +81,13 @@ public class SanLorenzoDbContext(DbContextOptions<SanLorenzoDbContext> options) 
         {
             e.HasKey(s => s.Id);
             e.Property(s => s.Name).HasMaxLength(100).IsRequired();
+            e.Property(s => s.GradeLevel).HasMaxLength(20).IsRequired();
+            e.Property(s => s.Section).HasMaxLength(20).IsRequired();
+            e.Property(s => s.Email).HasMaxLength(255);
+            e.Property(s => s.Phone).HasMaxLength(30);
 
-            e.HasOne(s => s.Course).WithMany(c => c.Students)
-                .HasForeignKey(s => s.CourseId).OnDelete(DeleteBehavior.Cascade);
-
-            e.HasIndex(s => s.CourseId);
+            // A student's courses are resolved by matching grade + section.
+            e.HasIndex(s => new { s.GradeLevel, s.Section });
         });
 
         modelBuilder.Entity<Grade>(e =>
@@ -155,6 +162,58 @@ public class SanLorenzoDbContext(DbContextOptions<SanLorenzoDbContext> options) 
                 .HasForeignKey(a => a.CourseId).OnDelete(DeleteBehavior.Restrict);
 
             e.HasIndex(a => a.TeacherId);
+        });
+
+        modelBuilder.Entity<SystemSettings>(e =>
+        {
+            e.HasKey(s => s.Id);
+            e.Property(s => s.SchoolName).HasMaxLength(150).IsRequired();
+            e.Property(s => s.CurrentTerm).HasMaxLength(20).IsRequired();
+        });
+
+        modelBuilder.Entity<Assignment>(e =>
+        {
+            e.HasKey(a => a.Id);
+            e.Property(a => a.Title).HasMaxLength(150).IsRequired();
+            e.Property(a => a.Type).HasConversion<string>().HasMaxLength(10).IsRequired();
+            e.Property(a => a.StartDate).HasColumnType("date");
+            e.Property(a => a.DueDate).HasColumnType("date");
+
+            e.HasOne(a => a.Course).WithMany()
+                .HasForeignKey(a => a.CourseId).OnDelete(DeleteBehavior.Cascade);
+
+            e.HasIndex(a => a.CourseId);
+        });
+
+        modelBuilder.Entity<Report>(e =>
+        {
+            e.HasKey(r => r.Id);
+            e.Property(r => r.GradeLevel).HasMaxLength(20).IsRequired();
+            e.Property(r => r.Term).HasMaxLength(20).IsRequired();
+
+            e.HasOne(r => r.Teacher).WithMany()
+                .HasForeignKey(r => r.TeacherId).OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<Broadcast>(e =>
+        {
+            e.HasKey(b => b.Id);
+            e.Property(b => b.Subject).HasMaxLength(200).IsRequired();
+            e.Property(b => b.Body).IsRequired();
+            e.Property(b => b.Audience).HasConversion<string>().HasMaxLength(20).IsRequired();
+            e.Property(b => b.GradeLevel).HasMaxLength(20);
+        });
+
+        modelBuilder.Entity<BehaviorReport>(e =>
+        {
+            e.HasKey(b => b.Id);
+            e.Property(b => b.Date).HasColumnType("date");
+            e.Property(b => b.Description).HasMaxLength(500).IsRequired();
+
+            e.HasOne(b => b.Student).WithMany()
+                .HasForeignKey(b => b.StudentId).OnDelete(DeleteBehavior.Cascade);
+
+            e.HasIndex(b => b.Date);
         });
     }
 }

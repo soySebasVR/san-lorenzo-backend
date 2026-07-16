@@ -8,11 +8,11 @@ using ServerlessAPI.Repositories;
 namespace ServerlessAPI.Controllers;
 
 [ApiController]
-[Authorize(Roles = nameof(Role.Coordinator))]
+[Authorize(Roles = nameof(Role.Teacher))]
 [Route("docente/comunicaciones")]
 [Produces("application/json")]
-public class AnnouncementsController(
-    ILogger<AnnouncementsController> logger,
+public class TeacherAnnouncementsController(
+    ILogger<TeacherAnnouncementsController> logger,
     IUserContext userContext,
     IAnnouncementRepository repository) : ControllerBase
 {

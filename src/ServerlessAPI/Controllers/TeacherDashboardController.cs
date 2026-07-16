@@ -11,8 +11,8 @@ namespace ServerlessAPI.Controllers;
 [Authorize(Roles = nameof(Role.Teacher))]
 [Route("docente/inicio")]
 [Produces("application/json")]
-public class DashboardController(
-    ILogger<DashboardController> logger,
+public class TeacherDashboardController(
+    ILogger<TeacherDashboardController> logger,
     IUserContext userContext,
     IDashboardRepository repository) : ControllerBase
 {

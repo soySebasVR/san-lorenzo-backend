@@ -11,8 +11,8 @@ namespace ServerlessAPI.Controllers;
 [Authorize(Roles = nameof(Role.Teacher))]
 [Route("docente/horarios")]
 [Produces("application/json")]
-public class ScheduleController(
-    ILogger<ScheduleController> logger,
+public class TeacherScheduleController(
+    ILogger<TeacherScheduleController> logger,
     IUserContext userContext,
     IScheduleRepository repository) : ControllerBase
 {

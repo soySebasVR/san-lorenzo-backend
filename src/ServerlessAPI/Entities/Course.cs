@@ -13,7 +13,6 @@ public class Course
     public string? ScheduleText { get; set; }
 
     public Teacher Teacher { get; set; } = null!;
-    public ICollection<Student> Students { get; set; } = [];
     public ICollection<Grade> Grades { get; set; } = [];
     public ICollection<Attendance> AttendanceRecords { get; set; } = [];
     public ICollection<ScheduleSlot> ScheduleSlots { get; set; } = [];

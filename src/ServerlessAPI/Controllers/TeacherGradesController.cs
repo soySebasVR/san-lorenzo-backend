@@ -12,8 +12,8 @@ namespace ServerlessAPI.Controllers;
 [Authorize(Roles = nameof(Role.Teacher))]
 [Route("docente/notas")]
 [Produces("application/json")]
-public class GradesController(
-    ILogger<GradesController> logger,
+public class TeacherGradesController(
+    ILogger<TeacherGradesController> logger,
     IUserContext userContext,
     IGradeRepository repository) : ControllerBase
 {

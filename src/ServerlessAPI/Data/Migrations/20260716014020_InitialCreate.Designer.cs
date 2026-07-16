@@ -12,7 +12,7 @@ using ServerlessAPI.Data;
 namespace ServerlessAPI.Data.Migrations
 {
     [DbContext(typeof(SanLorenzoDbContext))]
-    [Migration("20260714155437_InitialCreate")]
+    [Migration("20260716014020_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -73,6 +73,40 @@ namespace ServerlessAPI.Data.Migrations
                     b.ToTable("Announcements");
                 });
 
+            modelBuilder.Entity("ServerlessAPI.Entities.Assignment", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("CourseId")
+                        .HasColumnType("int");
+
+                    b.Property<DateOnly>("DueDate")
+                        .HasColumnType("date");
+
+                    b.Property<DateOnly>("StartDate")
+                        .HasColumnType("date");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("nvarchar(10)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CourseId");
+
+                    b.ToTable("Assignments");
+                });
+
             modelBuilder.Entity("ServerlessAPI.Entities.Attendance", b =>
                 {
                     b.Property<int>("Id")
@@ -101,6 +135,71 @@ namespace ServerlessAPI.Data.Migrations
                         .IsUnique();
 
                     b.ToTable("Attendance", (string)null);
+                });
+
+            modelBuilder.Entity("ServerlessAPI.Entities.BehaviorReport", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateOnly>("Date")
+                        .HasColumnType("date");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<int>("StudentId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Date");
+
+                    b.HasIndex("StudentId");
+
+                    b.ToTable("BehaviorReports");
+                });
+
+            modelBuilder.Entity("ServerlessAPI.Entities.Broadcast", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Audience")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<string>("Body")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("GradeLevel")
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<DateTime>("ScheduledFor")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Subject")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Broadcasts");
                 });
 
             modelBuilder.Entity("ServerlessAPI.Entities.Course", b =>
@@ -192,6 +291,37 @@ namespace ServerlessAPI.Data.Migrations
                     b.ToTable("Grades");
                 });
 
+            modelBuilder.Entity("ServerlessAPI.Entities.Report", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("GeneratedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("GradeLevel")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<int?>("TeacherId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Term")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TeacherId");
+
+                    b.ToTable("Reports");
+                });
+
             modelBuilder.Entity("ServerlessAPI.Entities.ScheduleSlot", b =>
                 {
                     b.Property<int>("Id")
@@ -232,19 +362,72 @@ namespace ServerlessAPI.Data.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<int>("CourseId")
-                        .HasColumnType("int");
+                    b.Property<bool>("AppNotifications")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Email")
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
+
+                    b.Property<bool>("EmailNotifications")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("GradeLevel")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
 
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
+                    b.Property<string>("Phone")
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)");
+
+                    b.Property<string>("Section")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
                     b.HasKey("Id");
 
-                    b.HasIndex("CourseId");
+                    b.HasIndex("GradeLevel", "Section");
 
                     b.ToTable("Students");
+                });
+
+            modelBuilder.Entity("ServerlessAPI.Entities.SystemSettings", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("AcademicYear")
+                        .HasColumnType("int");
+
+                    b.Property<string>("CurrentTerm")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<int>("LatenessToleranceMinutes")
+                        .HasColumnType("int");
+
+                    b.Property<string>("SchoolName")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<int>("UnjustifiedAbsenceThreshold")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("SystemSettings");
                 });
 
             modelBuilder.Entity("ServerlessAPI.Entities.Teacher", b =>
@@ -296,10 +479,16 @@ namespace ServerlessAPI.Data.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<bool>("AppNotifications")
+                        .HasColumnType("bit");
+
                     b.Property<string>("Email")
                         .IsRequired()
                         .HasMaxLength(255)
                         .HasColumnType("nvarchar(255)");
+
+                    b.Property<bool>("EmailNotifications")
+                        .HasColumnType("bit");
 
                     b.Property<string>("FullName")
                         .IsRequired()
@@ -358,6 +547,17 @@ namespace ServerlessAPI.Data.Migrations
                     b.Navigation("Teacher");
                 });
 
+            modelBuilder.Entity("ServerlessAPI.Entities.Assignment", b =>
+                {
+                    b.HasOne("ServerlessAPI.Entities.Course", "Course")
+                        .WithMany()
+                        .HasForeignKey("CourseId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Course");
+                });
+
             modelBuilder.Entity("ServerlessAPI.Entities.Attendance", b =>
                 {
                     b.HasOne("ServerlessAPI.Entities.Course", "Course")
@@ -373,6 +573,17 @@ namespace ServerlessAPI.Data.Migrations
                         .IsRequired();
 
                     b.Navigation("Course");
+
+                    b.Navigation("Student");
+                });
+
+            modelBuilder.Entity("ServerlessAPI.Entities.BehaviorReport", b =>
+                {
+                    b.HasOne("ServerlessAPI.Entities.Student", "Student")
+                        .WithMany()
+                        .HasForeignKey("StudentId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.Navigation("Student");
                 });
@@ -407,21 +618,20 @@ namespace ServerlessAPI.Data.Migrations
                     b.Navigation("Student");
                 });
 
+            modelBuilder.Entity("ServerlessAPI.Entities.Report", b =>
+                {
+                    b.HasOne("ServerlessAPI.Entities.Teacher", "Teacher")
+                        .WithMany()
+                        .HasForeignKey("TeacherId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("Teacher");
+                });
+
             modelBuilder.Entity("ServerlessAPI.Entities.ScheduleSlot", b =>
                 {
                     b.HasOne("ServerlessAPI.Entities.Course", "Course")
                         .WithMany("ScheduleSlots")
-                        .HasForeignKey("CourseId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Course");
-                });
-
-            modelBuilder.Entity("ServerlessAPI.Entities.Student", b =>
-                {
-                    b.HasOne("ServerlessAPI.Entities.Course", "Course")
-                        .WithMany("Students")
                         .HasForeignKey("CourseId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -453,8 +663,6 @@ namespace ServerlessAPI.Data.Migrations
                     b.Navigation("Grades");
 
                     b.Navigation("ScheduleSlots");
-
-                    b.Navigation("Students");
                 });
 
             modelBuilder.Entity("ServerlessAPI.Entities.Student", b =>

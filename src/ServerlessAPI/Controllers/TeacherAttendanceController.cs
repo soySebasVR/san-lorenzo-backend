@@ -12,8 +12,8 @@ namespace ServerlessAPI.Controllers;
 [Authorize(Roles = nameof(Role.Teacher))]
 [Route("docente/asistencia")]
 [Produces("application/json")]
-public class AttendanceController(
-    ILogger<AttendanceController> logger,
+public class TeacherAttendanceController(
+    ILogger<TeacherAttendanceController> logger,
     IUserContext userContext,
     IAttendanceRepository repository) : ControllerBase
 {

@@ -28,8 +28,8 @@ public sealed class AttendanceRepositoryTests : SqliteTestBase
             GradeLevel = "3ro", Section = "A", Color = "#3B82F6",
         });
         Db.Students.AddRange(
-            new Student { Id = StudentA, CourseId = CourseId, Name = "Ana Alumna" },
-            new Student { Id = StudentB, CourseId = CourseId, Name = "Beto Alumno" });
+            new Student { Id = StudentA, GradeLevel = "3ro", Section = "A", Name = "Ana Alumna" },
+            new Student { Id = StudentB, GradeLevel = "3ro", Section = "A", Name = "Beto Alumno" });
 
         return Task.CompletedTask;
     }

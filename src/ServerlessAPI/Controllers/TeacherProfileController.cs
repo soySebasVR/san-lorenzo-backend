@@ -11,8 +11,8 @@ namespace ServerlessAPI.Controllers;
 [Authorize(Roles = nameof(Role.Teacher))]
 [Route("docente/perfil")]
 [Produces("application/json")]
-public class ProfileController(
-    ILogger<ProfileController> logger,
+public class TeacherProfileController(
+    ILogger<TeacherProfileController> logger,
     IUserContext userContext,
     IProfileRepository repository) : ControllerBase
 {
