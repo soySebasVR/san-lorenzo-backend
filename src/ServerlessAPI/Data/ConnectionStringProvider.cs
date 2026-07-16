@@ -5,14 +5,9 @@ using ServerlessAPI.Infrastructure;
 
 namespace ServerlessAPI.Data;
 
-/// <summary>
-/// SQL Server connection string, built from credentials in AWS Secrets Manager.
-/// Caching is separate from resolution so the password never lands inside a SnapStart
-/// snapshot; Program.cs drives the Clear/Warm cycle around the snapshot.
-/// </summary>
+/// <summary>Proveedor de cadena de conexión desde Secrets Manager.</summary>
 public sealed class ConnectionStringProvider(IConfiguration configuration) : ISecretBackedProvider
 {
-    // Written by SnapStart hooks, read by the ASP.NET pipeline.
     private volatile string? _connectionString;
 
     /// <summary>
@@ -23,13 +18,11 @@ public sealed class ConnectionStringProvider(IConfiguration configuration) : ISe
 
     public async Task WarmAsync() => await ResolveAsync().ConfigureAwait(false);
 
-    public void Clear() => _connectionString = null;
-
     private async Task<string> ResolveAsync()
     {
         var secretName = Environment.GetEnvironmentVariable("DB_SECRET_NAME");
 
-        // No secret configured means local development.
+        // Desarrollo local si no hay secreto configurado.
         if (string.IsNullOrWhiteSpace(secretName))
         {
             var local = configuration.GetConnectionString("SanLorenzo");
@@ -44,9 +37,6 @@ public sealed class ConnectionStringProvider(IConfiguration configuration) : ISe
             return local;
         }
 
-        // ForceFetch skips the Powertools in-memory cache, which would otherwise be
-        // captured in the snapshot too. Deserialized here because the Powertools fluent
-        // builder is terminal: it chains ForceFetch() or WithTransformation(), not both.
         var json = await ParametersManager.SecretsProvider
             .ForceFetch()
             .GetAsync(secretName)
@@ -60,7 +50,6 @@ public sealed class ConnectionStringProvider(IConfiguration configuration) : ISe
         if (secret is null || string.IsNullOrWhiteSpace(secret.Username))
             throw new InvalidOperationException($"Secret '{secretName}' has no valid credentials.");
 
-        // RDS-managed secrets carry host/port/dbname; hand-made ones don't.
         var host = secret.Host ?? Environment.GetEnvironmentVariable("DB_HOST");
         var database = secret.DbName ?? Environment.GetEnvironmentVariable("DB_NAME");
         var port = secret.Port ?? int.Parse(Environment.GetEnvironmentVariable("DB_PORT") ?? "1433");
@@ -80,8 +69,7 @@ public sealed class ConnectionStringProvider(IConfiguration configuration) : ISe
             // rds-ca-rsa2048-g1 bundle shipped with the function.
             TrustServerCertificate = true,
 
-            // Process-wide pool, reused across warm invocations. No connection is opened
-            // during INIT, so after a SnapStart restore the pool simply starts empty.
+            // Process-wide pool, reused across warm invocations.
             Pooling = true,
             MinPoolSize = 0,
             MaxPoolSize = 10,

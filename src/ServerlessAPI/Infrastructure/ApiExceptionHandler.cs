@@ -3,10 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace ServerlessAPI.Infrastructure;
 
-/// <summary>
-/// Maps domain errors to ProblemDetails. Anything that is not an ApiException falls through
-/// to the default pipeline and surfaces as a 500, so internals never reach the client.
-/// </summary>
+/// <summary>Mapea errores de dominio a HTTP.</summary>
 public sealed class ApiExceptionHandler(ILogger<ApiExceptionHandler> logger) : IExceptionHandler
 {
     public async ValueTask<bool> TryHandleAsync(

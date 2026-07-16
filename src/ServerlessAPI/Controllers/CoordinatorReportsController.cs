@@ -8,6 +8,7 @@ using ServerlessAPI.Repositories;
 namespace ServerlessAPI.Controllers;
 
 [ApiController]
+[ApiExplorerSettings(GroupName = "Coordinator")]
 [Authorize(Roles = nameof(Role.Coordinator))]
 [Route("coordinador/reportes")]
 [Produces("application/json")]
@@ -15,7 +16,7 @@ public class CoordinatorReportsController(
     ILogger<CoordinatorReportsController> logger,
     IReportRepository repository) : ControllerBase
 {
-    /// <summary>History of generated reports.</summary>
+    /// <summary>Historial de reportes generados..</summary>
     [HttpGet]
     [ProducesResponseType<IReadOnlyList<ReportListItem>>(StatusCodes.Status200OK)]
     public async Task<ActionResult<IReadOnlyList<ReportListItem>>> List(CancellationToken ct) =>
@@ -29,7 +30,7 @@ public class CoordinatorReportsController(
         CancellationToken ct)
     {
         var report = await repository.GenerateAsync(request, ct);
-        logger.LogInformation("Report generated. Id {ReportId}, grade {Grade}, term {Term}",
+        logger.LogInformation("Reporte generado. Id {ReportId}, grade {Grade}, term {Term}",
             report.Id, report.GradeLevel, report.Term);
         return CreatedAtAction(nameof(List), new { id = report.Id }, report);
     }

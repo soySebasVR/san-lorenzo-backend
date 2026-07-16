@@ -2,14 +2,14 @@ using System.ComponentModel.DataAnnotations;
 
 namespace ServerlessAPI.Dtos;
 
-// ── Dashboard (/alumno/inicio) ───────────────────────────────────────────────
+// ── Inicio ───────────────────────────────────────────────
 public record StudentDashboardResponse(
     decimal OverallAverage,
     int AttendancePercentage,
     int TotalCourses,
     IReadOnlyList<StudentCourseGrade> Courses);
 
-// ── Courses / grades (/alumno/cursos, /alumno/notas) ─────────────────────────
+// ── Cursos y Notas ─────────────────────────
 public record StudentCourse(
     int Id,
     string Name,
@@ -28,7 +28,7 @@ public record StudentGradesResponse(
     string Term,
     IReadOnlyList<StudentCourseGrade> Courses);
 
-// ── Attendance (/alumno/asistencia) ──────────────────────────────────────────
+// ── Asistencia ──────────────────────────────────────────
 public record StudentAttendanceItem(
     DateOnly Date,
     string Course,
@@ -38,13 +38,13 @@ public record StudentAttendanceResponse(
     int TotalAbsences,
     IReadOnlyList<StudentAttendanceItem> History);
 
-// ── Schedule (/alumno/horarios) ──────────────────────────────────────────────
+// ── Horarios ──────────────────────────────────────────────
 public record StudentScheduleResponse(
     string GradeLevel,
     string Section,
     IReadOnlyList<ScheduledClass> Classes);
 
-// ── Profile (/alumno/perfil) ─────────────────────────────────────────────────
+// ── Perfil ─────────────────────────────────────────────────
 public record StudentProfileResponse(
     int StudentId,
     string FullName,
@@ -55,7 +55,7 @@ public record StudentProfileResponse(
     bool EmailNotifications,
     bool AppNotifications);
 
-/// <summary>Name, grade and section are institutional and not editable here.</summary>
+/// <summary>Nombre, grado y sección no editables aquí.</summary>
 public record UpdateStudentProfileRequest
 {
     [EmailAddress]

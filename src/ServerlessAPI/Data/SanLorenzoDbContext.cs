@@ -73,7 +73,7 @@ public class SanLorenzoDbContext(DbContextOptions<SanLorenzoDbContext> options) 
             e.HasOne(c => c.Teacher).WithMany(t => t.Courses)
                 .HasForeignKey(c => c.TeacherId).OnDelete(DeleteBehavior.Restrict);
 
-            // Nearly every query filters by teacher.
+            // Filtro principal por docente.
             e.HasIndex(c => c.TeacherId);
         });
 
@@ -86,7 +86,7 @@ public class SanLorenzoDbContext(DbContextOptions<SanLorenzoDbContext> options) 
             e.Property(s => s.Email).HasMaxLength(255);
             e.Property(s => s.Phone).HasMaxLength(30);
 
-            // A student's courses are resolved by matching grade + section.
+            // Cursos resueltos por grado y sección.
             e.HasIndex(s => new { s.GradeLevel, s.Section });
         });
 
@@ -95,7 +95,7 @@ public class SanLorenzoDbContext(DbContextOptions<SanLorenzoDbContext> options) 
             e.HasKey(g => g.Id);
             e.Property(g => g.Term).HasMaxLength(20).IsRequired();
 
-            // 20.00 fits in decimal(4,2); without this EF warns about truncation.
+            // Precisión decimal(4,2) para notas.
             foreach (var score in new[]
                      {
                          nameof(Grade.Score1), nameof(Grade.Score2), nameof(Grade.Score3),
@@ -111,7 +111,7 @@ public class SanLorenzoDbContext(DbContextOptions<SanLorenzoDbContext> options) 
             e.HasOne(g => g.Course).WithMany(c => c.Grades)
                 .HasForeignKey(g => g.CourseId).OnDelete(DeleteBehavior.Restrict);
 
-            // Natural key of the upsert; the unique index makes it atomic in the engine.
+            // Llave natural para upsert atómico.
             e.HasIndex(g => new { g.StudentId, g.CourseId, g.Term }).IsUnique();
         });
 
@@ -129,7 +129,7 @@ public class SanLorenzoDbContext(DbContextOptions<SanLorenzoDbContext> options) 
 
             e.HasIndex(a => new { a.StudentId, a.CourseId, a.Date }).IsUnique();
 
-            // The dashboard asks "which courses have no attendance today?" on every load.
+            // Índice para optimizar consultas de asistencia diaria.
             e.HasIndex(a => new { a.CourseId, a.Date });
         });
 

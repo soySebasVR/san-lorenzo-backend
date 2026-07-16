@@ -1,6 +1,6 @@
 namespace ServerlessAPI.Dtos;
 
-/// <summary>Times are "HH:mm" so the frontend can drop them straight into &lt;time datetime&gt;.</summary>
+/// <summary>Formatos "HH:mm" para uso directo en el frontend.</summary>
 public record ScheduledClass(
     int Id,
     string Name,

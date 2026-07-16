@@ -2,10 +2,7 @@ using System.Text.Json.Serialization;
 
 namespace ServerlessAPI.Data;
 
-/// <summary>
-/// Shape of the Secrets Manager entry. RDS-managed secrets include host/port/dbname;
-/// hand-made ones only carry the credentials and the rest comes from env vars.
-/// </summary>
+/// <summary>Modelo del secreto en Secrets Manager.</summary>
 public sealed class DbSecret
 {
     [JsonPropertyName("username")]

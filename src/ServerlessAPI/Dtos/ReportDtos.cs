@@ -10,7 +10,7 @@ public record GenerateReportRequest
     [Required, StringLength(20)]
     public string Term { get; init; } = string.Empty;
 
-    /// <summary>Optional: restrict the report to one teacher's courses.</summary>
+    /// <summary>Opcional: restringir al curso de un docente.</summary>
     public int? TeacherId { get; init; }
 }
 

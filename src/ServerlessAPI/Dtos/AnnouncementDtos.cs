@@ -12,7 +12,7 @@ public record SendAnnouncementRequest
     [MinLength(1)]
     public string Message { get; init; } = string.Empty;
 
-    // Targeting filters. Null means "don't filter on this axis".
+    // Filtros opcionales (null ignora el filtro).
     [StringLength(20)] public string? Section { get; init; }
     [StringLength(20)] public string? GradeLevel { get; init; }
     public int? CourseId { get; init; }

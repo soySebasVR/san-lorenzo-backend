@@ -4,6 +4,7 @@ version = 0.1
 
 [default.global.parameters]
 stack_name = "san-lorenzo-backend"
+region = "us-east-1"
 
 [default.build.parameters]
 cached = true
@@ -16,6 +17,10 @@ lint = true
 capabilities = "CAPABILITY_IAM"
 confirm_changeset = true
 resolve_s3 = true
+s3_prefix = "san-lorenzo-backend"
+profile = "uni"
+parameter_overrides = "DbSecretName=\"rds!db-f6da8e92-6437-4f4f-abf0-14b8f2f24b0d\" JwtSecretName=\"san-lorenzo/jwt/signing-key\" DbHost=\"dweb.coeo4ygwrtif.us-east-1.rds.amazonaws.com\" DbName=\"sanlorenzo\" AllowedOrigins=\"http://localhost:4200,https://staging.d2275u9fh9sj70.amplifyapp.com\" LogLevel=\"Information\""
+image_repositories = []
 
 [default.package.parameters]
 resolve_s3 = true

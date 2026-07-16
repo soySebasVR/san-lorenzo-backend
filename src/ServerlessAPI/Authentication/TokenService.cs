@@ -20,7 +20,7 @@ public sealed class TokenService(JwtKeyProvider keys)
             new(ClaimTypes.Role, user.Role.ToString()),
         };
 
-        // Profile id rides along so requests don't hit the database just to resolve it.
+        // El id del perfil va en el token para evitar consultas a la DB.
         if (user.TeacherId is { } teacherId)
             claims.Add(new Claim(AppClaims.TeacherId, teacherId.ToString()));
 

@@ -1,6 +1,6 @@
 namespace ServerlessAPI.Infrastructure;
 
-/// <summary>Domain error that ApiExceptionHandler turns into an HTTP response.</summary>
+/// <summary>Excepción de dominio manejada por el API.</summary>
 public abstract class ApiException(string message) : Exception(message)
 {
     public abstract int StatusCode { get; }
@@ -13,7 +13,7 @@ public sealed class UnauthorizedException(string message) : ApiException(message
     public override string Title => "Not authenticated";
 }
 
-/// <summary>The resource exists but does not belong to the caller.</summary>
+/// <summary>Acceso denegado al recurso.</summary>
 public sealed class ForbiddenException(string message) : ApiException(message)
 {
     public override int StatusCode => StatusCodes.Status403Forbidden;

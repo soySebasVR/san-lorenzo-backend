@@ -5,13 +5,10 @@ using ServerlessAPI.Infrastructure;
 
 namespace ServerlessAPI.Authentication;
 
-/// <summary>
-/// JWT signing key from Secrets Manager. Same SnapStart treatment as the DB password:
-/// baking it into the snapshot would make key rotation pointless.
-/// </summary>
+/// <summary>Llave JWT obtenida desde Secrets Manager.</summary>
 public sealed class JwtKeyProvider(IConfiguration configuration) : ISecretBackedProvider
 {
-    /// <summary>HS256 rejects anything shorter.</summary>
+    /// <summary>Requisito mínimo de HS256.</summary>
     private const int MinKeyBytes = 32;
 
     private volatile SymmetricSecurityKey? _key;
@@ -21,12 +18,10 @@ public sealed class JwtKeyProvider(IConfiguration configuration) : ISecretBacked
     public string Issuer => configuration["Jwt:Issuer"] ?? "san-lorenzo";
     public string Audience => configuration["Jwt:Audience"] ?? "san-lorenzo-app";
 
-    /// <summary>Kept short: there is no revocation list.</summary>
+    /// <summary>Tiempo de vida corto para mayor seguridad.</summary>
     public static TimeSpan Lifetime => TimeSpan.FromHours(8);
 
     public async Task WarmAsync() => await ResolveAsync().ConfigureAwait(false);
-
-    public void Clear() => _key = null;
 
     private async Task<SymmetricSecurityKey> ResolveAsync()
     {

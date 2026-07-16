@@ -9,6 +9,7 @@ using ServerlessAPI.Repositories;
 namespace ServerlessAPI.Controllers;
 
 [ApiController]
+[ApiExplorerSettings(GroupName = "Teacher")]
 [Authorize(Roles = nameof(Role.Teacher))]
 [Route("docente/asistencia")]
 [Produces("application/json")]

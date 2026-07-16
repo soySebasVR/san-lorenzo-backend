@@ -7,7 +7,7 @@ public class Announcement
     public string Subject { get; set; } = string.Empty;
     public string Message { get; set; } = string.Empty;
 
-    // Targeting filters. Null means "don't filter on this axis".
+    // Filtros opcionales (null ignora el filtro).
     public string? Section { get; set; }
     public string? GradeLevel { get; set; }
     public int? CourseId { get; set; }

@@ -28,7 +28,7 @@ public record UpdateGradeRequest
     [StringLength(20, MinimumLength = 1)]
     public string Term { get; init; } = string.Empty;
 
-    // 0-20 scale.
+    // Escala de 0 a 20.
     [Range(0, 20)] public decimal Score1 { get; init; }
     [Range(0, 20)] public decimal Score2 { get; init; }
     [Range(0, 20)] public decimal Score3 { get; init; }

@@ -2,14 +2,14 @@ using System.ComponentModel.DataAnnotations;
 
 namespace ServerlessAPI.Dtos;
 
-// ── Dashboard (/coordinador/inicio) ──────────────────────────────────────────
+// ── Inicio ──────────────────────────────────────────
 public record CoordinatorDashboardResponse(
     int TotalStudents,
     int ActiveTeachers,
     int AttendanceTodayPercentage,
     int GradesCompliancePercentage);
 
-// ── Users (/coordinador/usuarios) ────────────────────────────────────────────
+// ── Usuarios ────────────────────────────────────────────
 public record UserListItem(
     int Id,
     string FullName,
@@ -37,11 +37,11 @@ public record CreateUserRequest
     [Required, StringLength(128, MinimumLength = 8)]
     public string Password { get; init; } = string.Empty;
 
-    /// <summary>"Teacher", "Student" or "Coordinator".</summary>
+    /// <summary>"Teacher", "Student" o "Coordinator".</summary>
     [Required]
     public string Role { get; init; } = string.Empty;
 
-    // Required to match the role: Teacher→TeacherId, Student→StudentId, Coordinator→neither.
+    // Id opcional según el rol del usuario.
     public int? TeacherId { get; init; }
     public int? StudentId { get; init; }
 }
@@ -54,7 +54,7 @@ public record UpdateUserRequest
     public bool IsActive { get; init; }
 }
 
-// ── Academic management (/coordinador/cursos) ────────────────────────────────
+// ── Cursos ────────────────────────────────
 public record AdminCourse(
     int Id,
     string Name,
@@ -86,7 +86,7 @@ public record TeacherOption(int Id, string FullName);
 
 public record GradeSection(string GradeLevel, string Section);
 
-// ── Schedule management (/coordinador/horarios) ──────────────────────────────
+// ── Horarios ──────────────────────────────
 public record AdminScheduleSlot(
     int Id,
     int CourseId,
@@ -117,7 +117,7 @@ public record SaveScheduleSlotRequest
     public string Icon { get; init; } = string.Empty;
 }
 
-// ── Settings (/coordinador/configuracion) ────────────────────────────────────
+// ── Configuración ────────────────────────────────────
 public record SettingsResponse(
     string SchoolName,
     int AcademicYear,
@@ -143,7 +143,7 @@ public record UpdateSettingsRequest
     public int LatenessToleranceMinutes { get; init; }
 }
 
-// ── Coordinator profile (/coordinador/perfil) ────────────────────────────────
+// ── Perfil ────────────────────────────────
 public record CoordinatorProfileResponse(
     int UserId,
     string FullName,

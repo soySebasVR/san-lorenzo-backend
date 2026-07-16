@@ -10,7 +10,7 @@ public record CreateAssignmentRequest
     [Required, StringLength(150, MinimumLength = 1)]
     public string Title { get; init; } = string.Empty;
 
-    /// <summary>"Task" or "Exam".</summary>
+    /// <summary>"Task" o "Exam".</summary>
     [Required]
     public string Type { get; init; } = string.Empty;
 
@@ -30,7 +30,7 @@ public record TeacherAssignment(
     DateOnly StartDate,
     DateOnly DueDate);
 
-/// <summary>Status is derived from the due date; per-student completion is not tracked.</summary>
+/// <summary>El estado depende de la fecha de entrega.</summary>
 public record StudentAssignment(
     int Id,
     string CourseName,

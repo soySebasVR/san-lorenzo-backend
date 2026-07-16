@@ -19,7 +19,7 @@ public record LoginResponse(
     DateTime ExpiresAt,
     CurrentUser User);
 
-/// <summary>Lets the frontend pick the right layout without decoding the JWT.</summary>
+/// <summary>Permite al frontend usar el layout correcto sin decodificar JWT.</summary>
 public record CurrentUser(
     int Id,
     string Email,

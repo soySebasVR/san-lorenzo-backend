@@ -8,6 +8,7 @@ namespace ServerlessAPI.Controllers;
 
 /// <summary>Academic management (Gestión Académica). Courses, plus lookups for the forms.</summary>
 [ApiController]
+[ApiExplorerSettings(GroupName = "Coordinator")]
 [Authorize(Roles = nameof(Role.Coordinator))]
 [Route("coordinador")]
 [Produces("application/json")]

@@ -4,10 +4,7 @@ using Microsoft.Extensions.Diagnostics.HealthChecks;
 
 namespace ServerlessAPI.Infrastructure;
 
-/// <summary>
-/// The default writer returns the bare word "Healthy", which is useless for diagnosing a
-/// failure. This one reports each check and, when it fails, why.
-/// </summary>
+/// <summary>Reporte detallado de HealthChecks.</summary>
 public static class HealthCheckResponse
 {
     private static readonly JsonSerializerOptions JsonOptions = new()

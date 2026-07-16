@@ -3,11 +3,7 @@ using Microsoft.EntityFrameworkCore.Design;
 
 namespace ServerlessAPI.Data;
 
-/// <summary>
-/// Used only by `dotnet ef`. Without it EF would boot Program.cs and hit Secrets Manager
-/// just to scaffold a migration. Generating migrations never connects, so a placeholder
-/// connection string is enough; pass a real one via --connection to apply them.
-/// </summary>
+/// <summary>Fábrica para migraciones de EF Core.</summary>
 public sealed class DesignTimeDbContextFactory : IDesignTimeDbContextFactory<SanLorenzoDbContext>
 {
     public SanLorenzoDbContext CreateDbContext(string[] args)

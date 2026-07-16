@@ -8,6 +8,7 @@ using ServerlessAPI.Repositories;
 namespace ServerlessAPI.Controllers;
 
 [ApiController]
+[ApiExplorerSettings(GroupName = "Student")]
 [Authorize(Roles = nameof(Role.Student))]
 [Route("alumno/notas")]
 [Produces("application/json")]
@@ -15,7 +16,7 @@ public class StudentGradesController(
     IUserContext userContext,
     IStudentRepository repository) : ControllerBase
 {
-    /// <summary>The student's courses with their grade. Defaults to the most recent term.</summary>
+    /// <summary>Cursos y notas del alumno.</summary>
     [HttpGet]
     [ProducesResponseType<StudentGradesResponse>(StatusCodes.Status200OK)]
     public async Task<ActionResult<StudentGradesResponse>> Get(

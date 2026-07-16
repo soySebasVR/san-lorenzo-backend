@@ -4,10 +4,7 @@ using ServerlessAPI.Infrastructure;
 
 namespace ServerlessAPI.Authentication;
 
-/// <summary>
-///     Reads the caller's identity from the JWT claims. Role and profile id travel inside the
-///     signed token, so a client cannot forge them the way it could with a plain header.
-/// </summary>
+/// <summary>Lee la identidad segura del JWT.</summary>
 public sealed class UserContext(IHttpContextAccessor accessor) : IUserContext
 {
     private ClaimsPrincipal Principal =>

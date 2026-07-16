@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi;
 using ServerlessAPI.Authentication;
 using ServerlessAPI.Data;
 using ServerlessAPI.Entities;
@@ -16,8 +17,7 @@ using ServerlessAPI.Repositories;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Powertools Logger implements ILogger, so the app just uses ILogger<T> and still gets
-// structured JSON with cold-start and correlation id.
+// Configuración de AWS Powertools Logger.
 builder.Logging
     .ClearProviders()
     .AddPowertoolsLogger(config =>
@@ -30,7 +30,7 @@ builder.Services
     .AddControllers()
     .AddJsonOptions(options =>
     {
-        // Angular consumes camelCase.
+        // Angular usa camelCase.
         options.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
         options.JsonSerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull;
     });
@@ -47,35 +47,9 @@ builder.Services.AddSingleton(jwtKeys);
 
 ISecretBackedProvider[] secrets = [connectionStrings, jwtKeys];
 
-// Lambda reports how it is initializing: "on-demand", "provisioned-concurrency" or
-// "snap-start". Outside Lambda the variable does not exist.
-var isSnapStart = Environment.GetEnvironmentVariable("AWS_LAMBDA_INITIALIZATION_TYPE") == "snap-start";
-
-if (isSnapStart)
-{
-    // Secrets are not read during INIT: whatever is cached there ends up inside the
-    // snapshot, which is reused across every execution environment. Cleared before the
-    // snapshot and re-read after each restore, so rotation works on its own.
-    Amazon.Lambda.Core.SnapshotRestore.RegisterBeforeSnapshot(() =>
-    {
-        foreach (var secret in secrets)
-            secret.Clear();
-
-        return ValueTask.CompletedTask;
-    });
-
-    Amazon.Lambda.Core.SnapshotRestore.RegisterAfterRestore(async () =>
-    {
-        foreach (var secret in secrets)
-            await secret.WarmAsync();
-    });
-}
-else
-{
-    // Resolved during INIT, where Lambda gives full CPU for free.
-    foreach (var secret in secrets)
-        await secret.WarmAsync();
-}
+// Precarga secretos
+foreach (var secret in secrets)
+    await secret.WarmAsync();
 
 // ── Authentication ───────────────────────────────────────────────────────────
 builder.Services
@@ -91,30 +65,24 @@ builder.Services
             ValidAudience = jwtKeys.Audience,
 
             ValidateLifetime = true,
-            // Default is 5 minutes of tolerance, which keeps expired tokens alive.
             ClockSkew = TimeSpan.Zero,
 
             ValidateIssuerSigningKey = true,
-            // A resolver rather than a fixed key: after a SnapStart restore the key is
-            // re-read, and validation picks up the new one without rebuilding the host.
             IssuerSigningKeyResolver = (_, _, _, _) => [jwtKeys.Key],
 
-            RoleClaimType = ClaimTypes.Role,
+            RoleClaimType = ClaimTypes.Role
         };
     });
 
 builder.Services.AddAuthorization();
 
-// Identity's hashing primitive (PBKDF2 with salt), used on its own: no Identity tables,
-// no DbContext, no proprietary tokens.
+// Hashing de contraseñas de Identity (PBKDF2).
 builder.Services.AddSingleton<IPasswordHasher<User>, PasswordHasher<User>>();
 builder.Services.AddScoped<TokenService>();
 
 // ── Database ─────────────────────────────────────────────────────────────────
 builder.Services.AddDbContext<SanLorenzoDbContext>((sp, options) =>
 {
-    // Read per scope, not captured at startup, so a SnapStart restore picks up the new
-    // connection string.
     var connectionString = sp.GetRequiredService<ConnectionStringProvider>().Value;
 
     options.UseSqlServer(connectionString, sql =>
@@ -124,9 +92,9 @@ builder.Services.AddDbContext<SanLorenzoDbContext>((sp, options) =>
         // 258 / -2 are SQL Server timeout errors that hit the first connection from a cold
         // Lambda container; adding them here makes EF retry instead of surfacing a 500.
         sql.EnableRetryOnFailure(
-            maxRetryCount: 5,
-            maxRetryDelay: TimeSpan.FromSeconds(6),
-            errorNumbersToAdd: [258, -2]);
+            5,
+            TimeSpan.FromSeconds(6),
+            [258, -2]);
 
         sql.CommandTimeout(30);
     });
@@ -174,32 +142,27 @@ builder.Services.AddCors(options =>
         .AllowAnyHeader()
         .AllowAnyMethod()));
 
-// AddDbContextCheck runs CanConnectAsync against SQL Server: it proves network,
-// credentials and database are all reachable, not just that the process is alive.
 builder.Services
     .AddHealthChecks()
     .AddDbContextCheck<SanLorenzoDbContext>(
-        name: "sqlserver",
-        failureStatus: HealthStatus.Unhealthy,
-        tags: ["db", "ready"]);
+        "sqlserver",
+        HealthStatus.Unhealthy,
+        ["db", "ready"]);
 
 builder.Services.AddOpenApi();
+builder.Services.AddSwaggerGen(c =>
+{
+    c.SwaggerDoc("Auth", new OpenApiInfo { Title = "Auth API", Version = "v1" });
+    c.SwaggerDoc("Coordinator", new OpenApiInfo { Title = "Coordinator API", Version = "v1" });
+    c.SwaggerDoc("Student", new OpenApiInfo { Title = "Student API", Version = "v1" });
+    c.SwaggerDoc("Teacher", new OpenApiInfo { Title = "Teacher API", Version = "v1" });
+});
 
-// Replaces Kestrel with the Lambda shim; a no-op outside Lambda, so the same binary runs
-// locally. AddAWSLambdaBeforeSnapshotRequest replays fake requests right before the
-// snapshot so the ASP.NET pipeline is already JIT-compiled inside the image. Neither route
-// touches the database on purpose: TCP connections do not survive a snapshot.
-builder.Services
-    .AddAWSLambdaHosting(LambdaEventSource.HttpApi)
-    .AddAWSLambdaBeforeSnapshotRequest(new HttpRequestMessage(HttpMethod.Get, "/health/live"))
-    // Without an Authorization header this 401s, which is the point: it exercises routing,
-    // authentication, authorization and the exception handler.
-    .AddAWSLambdaBeforeSnapshotRequest(new HttpRequestMessage(HttpMethod.Get, "/docente/inicio"));
+builder.Services.AddAWSLambdaHosting(LambdaEventSource.HttpApi);
 
 var app = builder.Build();
 
-// No UseHttpsRedirection: API Gateway already terminated TLS and the shim sees plain HTTP,
-// so leaving it on would 307 every request.
+// Sin redirección HTTPS: API Gateway.
 app.UseExceptionHandler();
 app.UseCors(corsPolicy);
 
@@ -208,26 +171,32 @@ app.UseAuthorization();
 
 app.MapControllers();
 
-if (app.Environment.IsDevelopment())
-    app.MapOpenApi();
+// if (app.Environment.IsDevelopment())
+// {
+app.MapOpenApi();
+app.UseSwagger();
+app.UseSwaggerUI(c =>
+{
+    c.SwaggerEndpoint("/prod/swagger/Auth/swagger.json", "Auth");
+    c.SwaggerEndpoint("/prod/swagger/Coordinator/swagger.json", "Coordinator");
+    c.SwaggerEndpoint("/prod/swagger/Student/swagger.json", "Student");
+    c.SwaggerEndpoint("/prod/swagger/Teacher/swagger.json", "Teacher");
+});
+// }
 
-// Liveness: does the process answer? Never touches the database, so a monitor can poll it
-// without opening RDS connections.
 app.MapHealthChecks("/health/live", new HealthCheckOptions
 {
     Predicate = _ => false,
-    ResponseWriter = HealthCheckResponse.WriteAsync,
+    ResponseWriter = HealthCheckResponse.WriteAsync
 });
 
-// Readiness: can we also reach SQL Server? This is the one to check after a deploy or a
-// network change (moving the function into the VPC).
 app.MapHealthChecks("/health", new HealthCheckOptions
 {
     Predicate = check => check.Tags.Contains("ready"),
-    ResponseWriter = HealthCheckResponse.WriteAsync,
+    ResponseWriter = HealthCheckResponse.WriteAsync
 });
 
 app.Run();
 
-// Required for WebApplicationFactory<Program> in the integration tests.
+// Necesario para pruebas de integración.
 public partial class Program;

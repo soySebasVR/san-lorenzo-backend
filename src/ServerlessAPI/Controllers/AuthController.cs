@@ -7,6 +7,7 @@ using ServerlessAPI.Repositories;
 namespace ServerlessAPI.Controllers;
 
 [ApiController]
+[ApiExplorerSettings(GroupName = "Auth")]
 [Route("auth")]
 [Produces("application/json")]
 public class AuthController(

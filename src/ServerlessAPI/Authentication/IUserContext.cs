@@ -2,16 +2,16 @@ using ServerlessAPI.Entities;
 
 namespace ServerlessAPI.Authentication;
 
-/// <summary>Identity of the caller, read from the validated JWT claims.</summary>
+/// <summary>Identidad del usuario desde el JWT.</summary>
 public interface IUserContext
 {
     int UserId { get; }
 
     Role Role { get; }
 
-    /// <summary>Throws if the caller is not a teacher.</summary>
+    /// <summary>Falla si no es docente.</summary>
     int TeacherId { get; }
 
-    /// <summary>Throws if the caller is not a student.</summary>
+    /// <summary>Falla si no es estudiante.</summary>
     int StudentId { get; }
 }

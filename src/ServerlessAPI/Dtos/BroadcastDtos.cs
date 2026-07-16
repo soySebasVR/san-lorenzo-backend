@@ -10,7 +10,7 @@ public record CreateBroadcastRequest
     [Required, MinLength(1)]
     public string Body { get; init; } = string.Empty;
 
-    /// <summary>"Students", "Teachers", "Parents" or "All".</summary>
+    /// <summary>"Students", "Teachers", "Parents" o "All".</summary>
     [Required]
     public string Audience { get; init; } = string.Empty;
 
