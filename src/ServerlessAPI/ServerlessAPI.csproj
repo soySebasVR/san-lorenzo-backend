@@ -22,9 +22,8 @@
         <!-- Evita cargar ICU en el arranque. La app no compara ni ordena texto según cultura:
              el ORDER BY lo hace SQL Server con su propia collation, y las fechas y horas viajan
              en formato invariante (ISO / "HH:mm"). -->
-        <InvariantGlobalization>true</InvariantGlobalization>
+        <InvariantGlobalization>false</InvariantGlobalization>
     </PropertyGroup>
-
     <ItemGroup>
         <PackageReference Include="Amazon.Lambda.AspNetCoreServer.Hosting" Version="2.1.0" />
         <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.9" />
