@@ -1,8 +1,5 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
-Description: >
-  san-lorenzo-backend — API del módulo docente.
-  ASP.NET Core sobre AWS Lambda, con SQL Server en RDS y credenciales en Secrets Manager.
 
 Parameters:
   DbSecretName:
